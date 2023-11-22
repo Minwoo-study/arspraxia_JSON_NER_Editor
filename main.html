@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="kr" data-theme="light">
+
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+        <link rel="stylesheet" href="style.css" type="text/css">
+        <title>Arspraxia's JSON NER Editor</title>
+        
+    </head>
+
+    <body>
+
+        <div id="header">
+            <div id="file-input-container">
+                <input type="file" id="file-input" />
+                <label for="file-input" id="file-drag-message">파일 선택 혹은 이곳에 파일 드래그</label>
+            </div>
+            <!-- Export 버튼 추가 -->
+            <button id="export-button" title="Export">
+              <img src="upload-icon.png" alt="Export" />
+            </button>
+        </div>
+        
+        <div id="editor-container"></div>
+
+        <script src = "script.js"></script>
+
+    </body>
+
+</html>

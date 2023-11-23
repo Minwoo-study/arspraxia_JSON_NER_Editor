@@ -221,6 +221,8 @@ document.getElementById('export-button').addEventListener('click', function() {
     item.Entities = entityData;
     item.NER_Count = entityData.length;
   });
+
+  // TODO : Word_Count를 구해 업데이트, entityData의 길이와 Raw_data의 길이가 일치하지 않을 경우 경고 출력
   
   // Blob 객체 생성 및 URL 생성
   const blob = new Blob([JSON.stringify(currentJson, null, 2)], {type : 'application/json'});

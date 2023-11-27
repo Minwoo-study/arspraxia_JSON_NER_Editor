@@ -1,6 +1,13 @@
 // 전역 변수로 currentJson를 선언합니다.
 let currentJson = null;
 
+// 현재 선택된 셀의 위치를 저장할 변수
+let selectedCellIndex = null;
+let selectedRowIndex = null;
+
+// 파일 이름을 저장하기 위한 전역 변수
+let currentFileName = "";
+
 function readJson(e) {
   try {
     // 파일 내용을 JSON으로 파싱하여 currentJson에 저장합니다.
@@ -13,7 +20,7 @@ function readJson(e) {
   }
 }
 
-// 각 셀에 대해 수정 가능하게 만들고 수정 내용을 처리하는 함수
+/* 각 셀에 대해 수정 가능하게 만들고 수정 내용을 처리하는 함수*/
 function makeCellEditable(cell) {
   // 셀을 수정 가능하게 만듭니다.
   cell.setAttribute('contenteditable', 'true');
@@ -59,6 +66,61 @@ function makeCellEditable(cell) {
   });
 }
 
+// 표 수정 인터랙션 바를 표시하는 함수
+function showInteractionBar(cell) {
+  let bar = document.getElementById('interaction-bar');
+
+  // 인터랙션 바의 위치를 클릭된 셀 위에 맞춥니다.
+  const cellRect = cell.getBoundingClientRect();
+
+  // 인터랙션 바의 x좌표를 셀의 중앙에 맞춥니다.
+  // 인터랙션 바를 셀의 상단에 위치시킵니다. 
+  // 셀의 top 위치에서 인터랙션 바의 높이와 스크롤 위치를 고려합니다.
+  const barLeft = cellRect.left + (cellRect.width / 2) - (bar.offsetWidth / 2);
+  const barTop = cellRect.top + window.scrollY - bar.offsetHeight;
+
+  bar.style.top = barTop + 'px';
+  bar.style.left = barLeft + 'px';
+
+  bar.classList.remove('hidden');
+}
+
+function makeCellInsertable(cell, index) {
+  // 셀을 선택하면 양옆을 선택해 열 추가를 할 수 있게 합니다.
+  cell.addEventListener('click', function(event) {
+    const rowIndex = event.target.closest('article').dataset.index;
+    selectCell(rowIndex, index); // rowIndex는 현재 행의 인덱스
+    showInteractionBar(event.target);
+    event.stopPropagation(); // 이벤트 버블링을 방지합니다.
+  });
+}
+
+// 새 열을 추가하는 함수
+function insertColumn(rowIndex, cellIndex, direction) {
+  let rawRow = currentJson.data[rowIndex].Raw_data.split(' ');
+  let entitiesRow = currentJson.data[rowIndex].Entities_list;
+
+  // 왼쪽 또는 오른쪽에 따라 새 열 삽입 위치 결정
+  let insertAt = direction === 'left' ? cellIndex : cellIndex + 1;
+
+  // Raw_data 행과 Entities_list 행에 새 열 삽입
+  rawRow.splice(insertAt, 0, '-');
+  entitiesRow.splice(insertAt, 0, 'O');
+
+  // currentJson 객체 업데이트
+  currentJson.data[rowIndex].Raw_data = rawRow.join(' ');
+  currentJson.data[rowIndex].Entities_list = entitiesRow;
+
+  // UI 업데이트
+  displayData(currentJson);
+}
+
+// 셀을 클릭할 때 선택된 셀의 인덱스를 저장하는 함수
+function selectCell(rowIndex, cellIndex) {
+  selectedRowIndex = rowIndex;
+  selectedCellIndex = cellIndex;
+}
+
 // displayData 함수는 currentJson를 사용하여 UI를 구성합니다.
 function displayData(currentJson) {
   // 여기에 UI를 업데이트하는 코드가 들어갑니다.
@@ -75,7 +137,10 @@ function displayData(currentJson) {
     // Display Sen_ID
     const senIdDiv = document.createElement('div');
     senIdDiv.className = 'sen-id';
-    senIdDiv.textContent = `Sen_ID: ${item.Sen_ID}`;
+    let sentenceId = item.Sen_ID;
+    if (item.Sen_ID === undefined) {sentenceId = item.SEN_ID}
+    senIdDiv.textContent = `Sen_ID: ${sentenceId}`;
+    // 예외처리 : Sen_ID가 undefined일 경우, 대신 SEN_ID를 표시
     articleBlock.appendChild(senIdDiv);
 
     // Create a scrollable table for Raw_data and Entities_list
@@ -98,7 +163,7 @@ function displayData(currentJson) {
       });
     tableDiv.appendChild(wordsRow);
 
-  // Create table row for entities and apply bold style if the entity is not "O"
+    // Create table row for entities and apply bold style if the entity is not "O"
     const entitiesRow = document.createElement('div');
     entitiesRow.className = 'table-row';
     entitiesRow.classList.add('entities-list-row')
@@ -119,6 +184,7 @@ function displayData(currentJson) {
   });
 
   document.querySelectorAll('.table-cell').forEach(makeCellEditable);
+  document.querySelectorAll('.table-cell').forEach(makeCellInsertable);
 }
 
 function makeEntityData(rawData, entitiesList) {
@@ -169,7 +235,7 @@ function makeEntityData(rawData, entitiesList) {
   return entityData;
 }
 
-
+// 버튼을 이용한 파일 업로드 시 이벤트 (파일 업로드)
 document.getElementById('file-input').addEventListener('change', function(event) {
   const file = event.target.files[0];
   if (file) {
@@ -179,6 +245,7 @@ document.getElementById('file-input').addEventListener('change', function(event)
   };
 });
 
+// 파일 끌어오기 시 이벤트 (파일 업로드)
 document.body.addEventListener('drop', function(event) {
   event.preventDefault();
   const file = event.dataTransfer.files[0];
@@ -198,9 +265,7 @@ document.body.addEventListener('drop', function(event) {
 // Optional: Handle drag and drop
 document.body.addEventListener('dragover', function(event) {event.preventDefault();});
 
-// 파일 이름을 저장하기 위한 전역 변수
-let currentFileName = "";
-
+// 새로 파일이 업로드되었을 경우 파일명 최신화하고 안내 메시지 숨김
 document.getElementById('file-input').addEventListener('change', function(event) {
   if (event.target.files.length > 0) {
     currentFileName = event.target.files[0].name; // 현재 파일 이름 저장
@@ -215,9 +280,11 @@ document.getElementById('export-button').addEventListener('click', function() {
   // currentJson을 가져오고 data의 각 요소의 Raw_data, Entities_list에 대해 makeEntityData 함수를 실행하여 entityData를 생성
   // 생성한 entityData를 currentJson.data의 각 요소의 Entities에 할당
   // currentJson.data의 각 요소의 NER_Count에 entityData의 길이를 할당
+  // Entities_list 길이에 따라 Word_Count 업데이트
 
   currentJson.data.forEach(item => {
     let entityData = makeEntityData(item.Raw_data, item.Entities_list);
+    item.Word_Count = item.Entities_list.length;
     item.Entities = entityData;
     item.NER_Count = entityData.length;
   });
@@ -239,5 +306,34 @@ document.getElementById('export-button').addEventListener('click', function() {
   // Blob URL 정리
   URL.revokeObjectURL(url);
 });
+
+
+// 열 추가 버튼 / 인터랙션 바 관련 이벤트
+
+// 문서의 다른 부분을 클릭하면 인터랙션 바를 숨깁니다.
+document.addEventListener('click', function(event) {
+  if (!event.target.matches('.table-cell')) {
+    document.querySelectorAll('#interaction-bar').forEach(bar => {
+      bar.classList.add('hidden');
+    });
+  }
+});
+
+document.getElementById('insert-left').addEventListener('click', function() {
+  // 현재 활성화된 셀의 인덱스를 찾아 왼쪽에 새로운 셀을 추가합니다.
+  // 여기에 왼쪽 셀 추가 로직을 구현합니다.
+  if (selectedCellIndex !== null) {
+    insertColumn(selectedRowIndex, selectedCellIndex, 'left');
+  }
+});
+
+document.getElementById('insert-right').addEventListener('click', function() {
+  // 현재 활성화된 셀의 인덱스를 찾아 오른쪽에 새로운 셀을 추가합니다.
+  // 여기에 오른쪽 셀 추가 로직을 구현합니다.
+  if (selectedCellIndex !== null) {
+    insertColumn(selectedRowIndex, selectedCellIndex, 'right');
+  }
+});
+
 
 // TODO: Add more interactive features, like editing entities and saving changes

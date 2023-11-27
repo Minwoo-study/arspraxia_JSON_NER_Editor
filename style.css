@@ -36,6 +36,27 @@
     padding-top: 90px; /* 상단 파일 입력 인터페이스의 높이보다 조금 더 크게 설정 */
 }
 
+#interaction-bar {
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+    width: 50px;
+    height: 30px;
+    position: absolute; /* 셀 위에 표시하기 위해 절대 위치 사용 */
+    transform: translateY(-0%); /* 셀 위로 올리기 (-100% : 너무 위로 올라감) */
+    z-index: 10; /* 다른 요소들 위에 표시 */
+    background-color: #fff; /* 배경색 */
+    border: 1px solid #ccc; /* 테두리 */
+    box-shadow: 2px 2px 5px rgba(0, 0, 0, 0.2); /* 그림자 효과 */
+    border-radius: 4px; /* 모서리 둥글기 */
+}
+
+#interaction-bar img {
+    width: 15px;
+    height: 15px;
+    cursor: pointer; /* 마우스 오버 시 커서 변경 */
+}
+
 .data-block {
   margin-bottom: var(--size-md); /* Pico CSS의 크기 변수 사용 */
   background-color: var(--white); /* 밝은 배경 설정 */
@@ -98,3 +119,7 @@
     font-weight: bold; /* 볼드 스타일 */
 }
 
+.hidden {
+    display: none; /* 숨김 처리 */
+    visibility: hidden;
+}

@@ -40,7 +40,7 @@
     display: flex;
     justify-content: space-around;
     align-items: center;
-    width: 50px;
+    width: 70px;
     height: 30px;
     position: absolute; /* 셀 위에 표시하기 위해 절대 위치 사용 */
     transform: translateY(-0%); /* 셀 위로 올리기 (-100% : 너무 위로 올라감) */
@@ -52,8 +52,8 @@
 }
 
 #interaction-bar img {
-    width: 15px;
-    height: 15px;
+    width: 20px;
+    height: 20px;
     cursor: pointer; /* 마우스 오버 시 커서 변경 */
 }
 

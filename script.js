@@ -3,7 +3,7 @@ let currentJson = null;
 
 // 현재 선택된 셀의 위치를 저장할 변수
 let selectedCellIndex = null;
-let selectedRowIndex = null;
+let selectedArticleIndex = null;
 
 // 파일 이름을 저장하기 위한 전역 변수
 let currentFileName = "";
@@ -18,6 +18,13 @@ function readJson(e) {
     console.error('Error parsing JSON:', error);
     alert('Invalid JSON file');
   }
+}
+
+// articleIndex, cellIndex 반환 함수
+function getCellIndex(event_target) {
+  const articleIndex = event_target.closest('article').dataset.index;
+  const cellIndex = Array.from(event_target.parentNode.children).indexOf(event_target);
+  return [articleIndex, cellIndex];
 }
 
 /* 각 셀에 대해 수정 가능하게 만들고 수정 내용을 처리하는 함수*/
@@ -39,8 +46,7 @@ function makeCellEditable(cell) {
     // 여기서 event.target.textContent를 사용하여 셀의 수정된 내용에 접근할 수 있습니다.
     let updatedContent = event.target.textContent;
 
-    let articleIndex = event.target.closest('article').dataset.index;
-    let cellIndex = Array.from(event.target.parentNode.children).indexOf(event.target);
+    const [articleIndex, cellIndex] = getCellIndex(event.target);
 
     if (event.target.closest('.raw-data-row')) {
       // Raw_data 행 셀 수정 시 로직
@@ -85,20 +91,20 @@ function showInteractionBar(cell) {
   bar.classList.remove('hidden');
 }
 
-function makeCellInsertable(cell, index) {
+function makeCellInsertable(cell) {
   // 셀을 선택하면 양옆을 선택해 열 추가를 할 수 있게 합니다.
   cell.addEventListener('click', function(event) {
-    const rowIndex = event.target.closest('article').dataset.index;
-    selectCell(rowIndex, index); // rowIndex는 현재 행의 인덱스
+    const [articleIndex, cellIndex] = getCellIndex(event.target);
+    selectCell(articleIndex, cellIndex); // articleIndex는 현재 행의 인덱스
     showInteractionBar(event.target);
     event.stopPropagation(); // 이벤트 버블링을 방지합니다.
   });
 }
 
 // 새 열을 추가하는 함수
-function insertColumn(rowIndex, cellIndex, direction) {
-  let rawRow = currentJson.data[rowIndex].Raw_data.split(' ');
-  let entitiesRow = currentJson.data[rowIndex].Entities_list;
+function insertColumn(articleIndex, cellIndex, direction) {
+  let rawRow = currentJson.data[articleIndex].Raw_data.split(' ');
+  let entitiesRow = currentJson.data[articleIndex].Entities_list;
 
   // 왼쪽 또는 오른쪽에 따라 새 열 삽입 위치 결정
   let insertAt = direction === 'left' ? cellIndex : cellIndex + 1;
@@ -108,17 +114,40 @@ function insertColumn(rowIndex, cellIndex, direction) {
   entitiesRow.splice(insertAt, 0, 'O');
 
   // currentJson 객체 업데이트
-  currentJson.data[rowIndex].Raw_data = rawRow.join(' ');
-  currentJson.data[rowIndex].Entities_list = entitiesRow;
+  currentJson.data[articleIndex].Raw_data = rawRow.join(' ');
+  currentJson.data[articleIndex].Entities_list = entitiesRow;
 
   // UI 업데이트
   displayData(currentJson);
 }
 
 // 셀을 클릭할 때 선택된 셀의 인덱스를 저장하는 함수
-function selectCell(rowIndex, cellIndex) {
-  selectedRowIndex = rowIndex;
+function selectCell(articleIndex, cellIndex) {
+  selectedArticleIndex = articleIndex;
   selectedCellIndex = cellIndex;
+}
+
+// 열을 삭제하는 함수
+function deleteColumn(articleIndex, cellIndex) {
+  // currentJson 데이터에서 해당 인덱스의 열을 삭제합니다.
+  let rawRow = currentJson.data[articleIndex].Raw_data.split(' ');
+  let entitiesRow = currentJson.data[articleIndex].Entities_list;
+
+  // 배열에서 해당 인덱스의 요소를 삭제합니다.
+  if (rawRow.length > 1) { // 최소 한 개의 열은 유지
+    rawRow.splice(cellIndex, 1);
+    entitiesRow.splice(cellIndex, 1);
+
+    // currentJson 객체 업데이트
+    currentJson.data[articleIndex].Raw_data = rawRow.join(' ');
+    currentJson.data[articleIndex].Entities_list = entitiesRow;
+
+    // UI 업데이트
+    displayData(currentJson);
+  } else {
+    // 열이 하나밖에 없을 경우 삭제하지 않고 사용자에게 경고합니다.
+    alert("최소 한 개의 열은 유지해야 합니다.");
+  }
 }
 
 // displayData 함수는 currentJson를 사용하여 UI를 구성합니다.
@@ -308,7 +337,7 @@ document.getElementById('export-button').addEventListener('click', function() {
 });
 
 
-// 열 추가 버튼 / 인터랙션 바 관련 이벤트
+// 열 추가/삭제 버튼 + 인터랙션 바 관련 이벤트
 
 // 문서의 다른 부분을 클릭하면 인터랙션 바를 숨깁니다.
 document.addEventListener('click', function(event) {
@@ -323,7 +352,7 @@ document.getElementById('insert-left').addEventListener('click', function() {
   // 현재 활성화된 셀의 인덱스를 찾아 왼쪽에 새로운 셀을 추가합니다.
   // 여기에 왼쪽 셀 추가 로직을 구현합니다.
   if (selectedCellIndex !== null) {
-    insertColumn(selectedRowIndex, selectedCellIndex, 'left');
+    insertColumn(selectedArticleIndex, selectedCellIndex, 'left');
   }
 });
 
@@ -331,9 +360,15 @@ document.getElementById('insert-right').addEventListener('click', function() {
   // 현재 활성화된 셀의 인덱스를 찾아 오른쪽에 새로운 셀을 추가합니다.
   // 여기에 오른쪽 셀 추가 로직을 구현합니다.
   if (selectedCellIndex !== null) {
-    insertColumn(selectedRowIndex, selectedCellIndex, 'right');
+    insertColumn(selectedArticleIndex, selectedCellIndex, 'right');
   }
 });
 
+// 열 삭제 버튼에 클릭 이벤트 리스너를 추가합니다.
+document.getElementById('delete-column').addEventListener('click', function() {
+  if (selectedCellIndex !== null) {
+    deleteColumn(selectedArticleIndex, selectedCellIndex);
+  }
+});
 
 // TODO: Add more interactive features, like editing entities and saving changes

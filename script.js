@@ -8,6 +8,10 @@ let selectedArticleIndex = null;
 // 파일 이름을 저장하기 위한 전역 변수
 let currentFileName = "";
 
+//
+
+const tagRex = new RegExp("((PS-(Name|Character|Group))|(PD-(Sports|Food|Drink|Clothing|Cosmetic|Vehicle|Accessories|Others))|(WA-(Document|Performance|Video|Art_Craft|Music|Musical_Instruments))|(BO-(Economy|Education|Military|Media|Sports|Art|Religion|Law|Politics|Food|Hotel|Others))|(LC-(Country|Province|City|Space|Building|Others))|(EV-(Activity|Incident|Sports|Festival|Others)))-(B|I)");
+
 function readJson(e) {
   try {
     // 파일 내용을 JSON으로 파싱하여 currentJson에 저장합니다.
@@ -54,16 +58,26 @@ function makeCellEditable(cell) {
     } else if (event.target.closest('.entities-list-row')) {
       // Entities_list 행 셀 수정 시 로직
       currentJson.data[articleIndex].Entities_list[cellIndex] = updatedContent;
+
+      let correspondingRawDataCell = event.target.parentNode.previousElementSibling.children[cellIndex];
+
+      // tagRex에 맞지 않는 경우 빨간 볼드 스타일(red.bold) 적용
       // 해당 Entities_list 셀의 볼드 스타일 변경
       if (updatedContent === "O") {
-        event.target.classList.remove('bold');
+        event.target.classList.remove('red', 'bold');
         // 동일한 인덱스를 가진 Raw_data 셀의 볼드 스타일을 제거
-        let correspondingRawDataCell = event.target.parentNode.previousElementSibling.children[cellIndex];
-        correspondingRawDataCell.classList.remove('bold');
-      } else {
+        correspondingRawDataCell.classList.remove('red', 'bold');
+      } else if (!tagRex.test(updatedContent)) {
+        // .red, .bold 클래스를 추가하여 빨간 볼드 스타일을 적용
+        event.target.classList.add('red', 'bold');
+        correspondingRawDataCell.classList.add('red', 'bold');
+      }
+      else {
+        // red 클래스가 있는 경우 제거
+        event.target.classList.remove('red');
+        correspondingRawDataCell.classList.remove('red');
         event.target.classList.add('bold');
         // 동일한 인덱스를 가진 Raw_data 셀에 볼드 스타일을 추가
-        let correspondingRawDataCell = event.target.parentNode.previousElementSibling.children[cellIndex];
         correspondingRawDataCell.classList.add('bold');
       }
     }

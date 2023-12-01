@@ -119,6 +119,10 @@
     font-weight: bold; /* 볼드 스타일 */
 }
 
+.red {
+    color: red; /* 빨간색 텍스트 */
+}
+
 .hidden {
     display: none; /* 숨김 처리 */
     visibility: hidden;
